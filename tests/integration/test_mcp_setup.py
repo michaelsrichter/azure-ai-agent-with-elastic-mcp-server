@@ -11,28 +11,58 @@ import json
 import logging
 import sys
 import os
+import importlib
+from dotenv import load_dotenv
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from mcp_client import create_mcp_client
-from config import config
+import config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def reload_config():
+    """Reload configuration to pick up latest .env changes."""
+    # Find the .env file path relative to the project root
+    project_root = os.path.join(os.path.dirname(__file__), '..', '..')
+    env_path = os.path.join(project_root, '.env')
+    env_exists = os.path.exists(env_path)
+    
+    print(f"🔄 Reloading .env from: {os.path.abspath(env_path)}")
+    print(f"   .env file exists: {'✅' if env_exists else '❌'}")
+    
+    # First, reload the .env file to pick up any changes
+    load_dotenv(dotenv_path=env_path, override=True)  # override=True ensures existing env vars are updated
+    
+    # Clear any cached config instances by reloading the module
+    importlib.reload(config)
+    
+    print(f"✅ Configuration reloaded with latest .env values")
+
+
+def get_current_config():
+    """Get the current config after any reloads."""
+    return config.config
+
+
 async def test_mcp_connection():
     """Test basic MCP server connection."""
     print("🔗 Testing MCP server connection...")
+    
+    # Ensure we have the latest config
+    reload_config()
     
     try:
         async with await create_mcp_client() as client:
             tools = await client.get_available_tools()
             
             if tools:
-                print(f"✅ Connected to MCP server at {config.mcp_server_url}")
+                current_config = get_current_config()
+                print(f"✅ Connected to MCP server at {current_config.mcp_server_url}")
                 print(f"✅ Found {len(tools)} available tools:")
                 for tool in tools:
                     name = tool.get('name', 'Unknown')
@@ -52,6 +82,9 @@ async def test_elasticsearch_list_indices():
     """Test Elasticsearch list indices via MCP server."""
     print("\n📋 Testing Elasticsearch list indices...")
     
+    # Ensure we have the latest config
+    reload_config()
+    
     try:
         async with await create_mcp_client() as client:
             result = await client.call_tool("list_indices", {})
@@ -61,7 +94,8 @@ async def test_elasticsearch_list_indices():
                 print(f"✅ Found {len(indices)} indices")
                 
                 # Look for our target index
-                target_index = config.elasticsearch_index
+                current_config = get_current_config()
+                target_index = current_config.elasticsearch_index
                 found_target = any(idx.get('name') == target_index for idx in indices)
                 
                 if found_target:
@@ -85,6 +119,9 @@ async def test_elasticsearch_list_indices():
 async def test_elasticsearch_search():
     """Test Elasticsearch search via MCP server."""
     print("\n🔍 Testing Elasticsearch search...")
+    
+    # Ensure we have the latest config
+    reload_config()
     
     try:
         async with await create_mcp_client() as client:
@@ -125,6 +162,7 @@ async def run_all_tests():
     """Run all setup tests."""
     print("🧪 MCP Agent Setup Tests")
     print("=" * 50)
+    print("ℹ️  Each test will reload .env to ensure latest configuration values\n")
     
     tests = [
         ("MCP Connection", test_mcp_connection),

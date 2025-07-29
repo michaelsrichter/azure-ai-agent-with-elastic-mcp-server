@@ -35,6 +35,7 @@ class AzureAIMCPAgent:
         self.agent_id: Optional[str] = None
         self.thread_id: Optional[str] = None
         self.mcp_tools: List[Dict[str, Any]] = []
+        self.last_tool_outputs: List[Dict[str, Any]] = []  # Store last tool call outputs
     
     async def __aenter__(self):
         """Async context manager entry."""
@@ -313,6 +314,15 @@ class AzureAIMCPAgent:
                 tool_outputs.append({
                     "tool_call_id": tool_call.id,
                     "output": output
+                })
+            
+            # Store the tool outputs for debugging/testing purposes
+            self.last_tool_outputs = []
+            for i, tool_call in enumerate(run.required_action.submit_tool_outputs.tool_calls):
+                self.last_tool_outputs.append({
+                    "tool_name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments,
+                    "output": tool_outputs[i]["output"]
                 })
             
             # Submit tool outputs to Azure AI
