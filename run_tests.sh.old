@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Quick test runner for Azure AI Agent with MCP Server
+echo "🔧 Azure AI Agent + MCP Server Test Runner"
+echo "=========================================="
+
+# Check if .env file exists
+if [ ! -f .env ]; then
+    echo "❌ .env file not found. Please create it from the template and fill in your values."
+    exit 1
+fi
+
+# Check if .env has placeholder values
+if grep -q "your-project-name" .env; then
+    echo "❌ Please update .env file with your actual Azure AI Foundry project endpoint"
+    echo "   PROJECT_ENDPOINT should be like: https://your-actual-project.cognitiveservices.azure.com/"
+    echo "   You can find this in the Azure AI Foundry portal under your project settings."
+    exit 1
+fi
+
+# Check if virtual environment is recommended
+if [ -z "$VIRTUAL_ENV" ]; then
+    echo "⚠️  Recommendation: Run this in a Python virtual environment"
+    echo "   python -m venv venv"
+    echo "   source venv/bin/activate"
+    echo ""
+fi
+
+# Install/update dependencies
+echo "📦 Installing dependencies..."
+pip3 install -r requirements.txt
+
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to install dependencies"
+    exit 1
+fi
+
+echo ""
+echo "🧪 Running integration tests..."
+echo ""
+
+# Run the integration tests
+python3 test_integration.py
+
+test_result=$?
+
+echo ""
+if [ $test_result -eq 0 ]; then
+    echo "🎉 All tests passed! Your setup is working correctly."
+else
+    echo "❌ Some tests failed. Check the output above for details."
+    echo ""
+    echo "Common issues and solutions:"
+    echo "1. Make sure your MCP server is running on http://localhost:8080/mcp"
+    echo "2. Verify your Azure credentials are set up (az login)"
+    echo "3. Check that MODEL_DEPLOYMENT_NAME in .env matches your Azure deployment"
+    echo "4. Ensure Elasticsearch is running and accessible"
+fi
+
+exit $test_result

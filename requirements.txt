@@ -1,0 +1,7 @@
+azure-ai-projects>=1.0.0b5
+azure-identity>=1.15.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+httpx>=0.25.0
+pydantic>=2.5.0
+pydantic-settings>=2.0.0
