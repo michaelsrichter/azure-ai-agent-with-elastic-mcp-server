@@ -136,7 +136,7 @@ async def main():
     print("=" * 80)
     
     # Check environment
-    required_env_vars = ["MCP_SERVER_URL", "AZURE_OPENAI_API_KEY"]
+    required_env_vars = ["MCP_SERVER_URL"]
     missing_vars = []
     
     for var in required_env_vars:
